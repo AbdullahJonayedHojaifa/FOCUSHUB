@@ -694,7 +694,7 @@ async function submitCheckin(answer, fast){
   try{
     if(typeof claude === 'undefined' || !claude.use){ resultBox.innerHTML = '<div style="color:var(--warn); font-size:13px;">AI check-in only works on claude.ai — on this hosting it just logs your tap. Timer and tab-switch tracking still work.</div>'; return; }
     const sample = await claude.use('sample');
-    if(!sample){ resultBox.innerHTML = '<div style="color:var(--warn); font-size:13px;">AI check-in isn\\'t available in this view — the timer and tab-switch tracking still work.</div>'; return; }
+    if(!sample){ resultBox.innerHTML = "<div style=\"color:var(--warn); font-size:13px;\">AI check-in isn't available in this view — the timer and tab-switch tracking still work.</div>"; return; }
     const res = await sample(`Goal: "${focusState.goal}". The person just told me what they are doing right now: "${answer}". In one short plain sentence, tell them if this is on-track or a distraction, and why. Start the sentence with exactly "ON TRACK" or "DISTRACTED".`, {modelTier:'quick'});
     const text = res.text || '';
     const off = /^distracted/i.test(text.trim());
