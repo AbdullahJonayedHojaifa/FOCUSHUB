@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger — time tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0A; --surface:#161616; --surface2:#202020; --line:#2C2C2C;
+  --text:#F5F5F3; --muted:#7D7D7D; --accent:#C4F135; --warn:#FF5A45; --danger:#FF5A45;
+  --radius:12px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:'Inter',system-ui,sans-serif; -webkit-tap-highlight-color:transparent;
+  display:flex; flex-direction:column; min-height:100vh;
+}
+h1,h2,h3{font-family:'Space Grotesk',system-ui,sans-serif;}
+.num{font-family:'Archivo Black',system-ui,sans-serif; font-weight:400; letter-spacing:-.02em;}
+header{
+  padding:22px 20px 10px; padding-top:calc(22px + env(safe-area-inset-top,0px));
+  display:flex; align-items:baseline; justify-content:space-between;
+}
+header h1{font-size:21px; margin:0; letter-spacing:-.01em; font-weight:700;}
+header .date{color:var(--muted); font-size:12.5px; font-weight:500;}
+main{flex:1; padding:0 16px 90px; max-width:640px; margin:0 auto; width:100%;}
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; margin-bottom:14px;
+}
+.hero{
+  background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent);
+  border-radius:var(--radius); padding:24px 22px; margin-bottom:14px;
+}
+.hero-row{display:flex; justify-content:space-between; align-items:flex-end; gap:16px;}
+.hero .big{font-size:52px; line-height:.9;}
+.hero .lbl{color:var(--muted); font-size:12px; margin-top:8px; font-weight:500; text-transform:uppercase; letter-spacing:.06em;}
+.split{display:flex; gap:10px; margin-top:18px;}
+.split div{flex:1;}
+.split .n{font-size:22px; font-family:'Space Grotesk'; font-weight:700;}
+.split .l{font-size:11px; color:var(--muted); font-weight:500;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.bar-track{height:10px; background:#000; border-radius:6px; overflow:hidden; margin-top:8px; border:1px solid var(--line);}
+.bar-fill{height:100%; border-radius:5px; transition:width .4s ease;}
+.cat-row{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line);}
+.cat-row:last-child{border-bottom:none;}
+.cat-row .name{flex:1; font-size:14.5px; font-weight:600;}
+.cat-row .time{font-size:14px; color:var(--muted); min-width:52px; text-align:right; font-weight:600;}
+.btn{
+  border:none; border-radius:9px; padding:11px 14px; font-family:'Space Grotesk',inherit; font-size:14px;
+  font-weight:600; cursor:pointer; color:var(--text); background:var(--surface2);
+  border:1px solid var(--line);
+}
+.btn.primary{background:var(--accent); color:#0A0A0A; border:none; font-weight:700;}
+.btn.danger{background:var(--danger); color:#0A0A0A; border:none; font-weight:700;}
+.btn.ghost{background:transparent;}
+.btn:active{transform:scale(.97);}
+.run-card{display:flex; align-items:center; gap:14px;}
+.run-card .info{flex:1;}
+.run-card .t{font-size:30px;}
+select,input[type=number],input[type=text]{
+  background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  border-radius:9px; padding:9px 10px; font-family:inherit; font-size:14px; width:100%;
+}
+label{font-size:11.5px; color:var(--muted); display:block; margin-bottom:5px; font-weight:500; text-transform:uppercase; letter-spacing:.04em;}
+.field{margin-bottom:12px;}
+.row2{display:flex; gap:10px;}
+.row2>*{flex:1;}
+h3{font-size:13px; margin:0 0 12px; color:var(--muted); font-weight:600; letter-spacing:.04em; text-transform:uppercase;}
+nav.tabs{
+  position:fixed; bottom:0; left:0; right:0; background:var(--surface);
+  border-top:1px solid var(--line); display:flex; padding:8px 10px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+  max-width:640px; margin:0 auto; width:100%;
+}
+nav.tabs button{
+  flex:1; background:none; border:none; color:var(--muted); font-family:'Space Grotesk';
+  font-size:11px; font-weight:600; padding:8px 4px; cursor:pointer; display:flex; flex-direction:column;
+  align-items:center; gap:4px;
+}
+nav.tabs button.active{color:var(--accent);}
+nav.tabs .ic{font-size:18px;}
+.view{display:none;}
+.view.active{display:block;}
+.empty{color:var(--muted); font-size:13.5px; text-align:center; padding:26px 10px;}
+.goal-row{margin-bottom:16px;}
+.goal-top{display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;}
+.goal-top .g-name{font-weight:600;}
+.goal-top .g-amt{color:var(--muted);}
+.hist-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+.hist-row:last-child{border-bottom:none;}
+.hist-day{font-weight:600;}
+.hist-bars{display:flex; gap:2px; height:20px; width:110px; border-radius:4px; overflow:hidden;}
+.chip{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; background:var(--surface2); border:1px solid var(--line); margin:3px 5px 3px 0; cursor:pointer;}
+.chip.on{border-color:var(--accent); color:var(--accent);}
+.modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; align-items:flex-end; justify-content:center; z-index:20;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--surface); border-radius:18px 18px 0 0; padding:20px; width:100%; max-width:640px; padding-bottom:calc(24px + env(safe-area-inset-bottom,0px)); border-top:3px solid var(--accent);}
+.modal h3{color:var(--text); font-size:16px; margin-bottom:16px; text-transform:none;}
+.close-x{float:right; background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;}
+.warn-text{color:var(--warn); font-size:12px; margin-top:8px; font-weight:500;}
+::selection{background:var(--accent); color:#0A0A0A;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ledger</h1>
+  <div class="date" id="todayLabel"></div>
+</header>
+
+<main>
+
+  <!-- TODAY VIEW -->
+  <div class="view active" id="view-today">
+
+    <div class="hero">
+      <div class="hero-row">
+        <div>
+          <div class="big num" id="totalToday">0h 0m</div>
+          <div class="lbl">tracked today</div>
+        </div>
+        <div style="text-align:right">
+          <div style="color:var(--accent); font-weight:600; font-size:15px" id="productiveToday">0h 0m</div>
+          <div class="lbl">productive</div>
+        </div>
+      </div>
+      <div class="split">
+        <div>
+          <div class="n" style="color:var(--warn)" id="wasteToday">0h 0m</div>
+          <div class="l">on distractions</div>
+        </div>
+        <div>
+          <div class="n" id="sessionsToday">0</div>
+          <div class="l">sessions logged</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="runningCard" style="display:none;">
+      <div class="run-card">
+        <div class="info">
+          <div style="font-size:13px; color:var(--muted)" id="runningCat">—</div>
+          <div class="t" id="runningTime">00:00:00</div>
+        </div>
+        <button class="btn danger" onclick="stopTimer()">Stop</button>
+      </div>
+    </div>
+
+    <div class="card" id="startCard">
+      <h3>Start a session</h3>
+      <div id="quickCats"></div>
+      <button class="btn ghost" style="width:100%; margin-top:8px;" onclick="openLogModal()">+ Log time manually</button>
+    </div>
+
+    <div class="card">
+      <h3>Today by category</h3>
+      <div id="catBreakdown"><div class="empty">Nothing logged yet today. Start a timer above, or log manually.</div></div>
+    </div>
+
+  </div>
+
+  <!-- GOALS VIEW -->
+  <div class="view" id="view-goals">
+    <div class="card">
+      <h3>Today's goals</h3>
+      <div id="goalsList"></div>
+      <div class="empty" id="goalsEmpty" style="display:none;">No goals set. Add one below.</div>
+    </div>
+    <div class="card">
+      <h3>Add a goal</h3>
+      <div class="field">
+        <label>Category</label>
+        <select id="goalCat"></select>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Type</label>
+          <select id="goalType">
+            <option value="max">Limit (max minutes/day)</option>
+            <option value="min">Target (min minutes/day)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Minutes</label>
+          <input type="number" id="goalMinutes" min="1" value="60">
+        </div>
+      </div>
+      <button class="btn primary" style="width:100%" onclick="addGoal()">Save goal</button>
+    </div>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div class="view" id="view-history">
+    <div class="card">
+      <h3>Last 14 days</h3>
+      <div id="historyList"><div class="empty">History will appear as you track days.</div></div>
+    </div>
+  </div>
+
+  <!-- CATEGORIES VIEW -->
+  <div class="view" id="view-categories">
+    <div class="card">
+      <h3>Your categories</h3>
+      <div id="catManageList"></div>
+    </div>
+    <div class="card">
+      <h3>Add category</h3>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="newCatName" placeholder="e.g. Reading">
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <div>
+          <span class="chip on" id="chipProductive" onclick="setNewCatType('productive')">Productive</span>
+          <span class="chip" id="chipDistraction" onclick="setNewCatType('distraction')">Distraction</span>
+          <span class="chip" id="chipNeutral" onclick="setNewCatType('neutral')">Neutral</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Color</label>
+        <div id="colorPicker"></div>
+      </div>
+      <button class="btn primary" style="width:100%" onclick="addCategory()">Add category</button>
+    </div>
+  </div>
+
+</main>
+
+<nav class="tabs">
+  <button class="active" data-view="today" onclick="switchView('today')"><span class="ic">◷</span>Today</button>
+  <button data-view="goals" onclick="switchView('goals')"><span class="ic">◎</span>Goals</button>
+  <button data-view="history" onclick="switchView('history')"><span class="ic">▤</span>History</button>
+  <button data-view="categories" onclick="switchView('categories')"><span class="ic">✎</span>Categories</button>
+  <button data-view="focus" onclick="switchView('focus')"><span class="ic">◈</span>Focus</button>
+</nav>
+
+<div class="view" id="view-focus">
+  <div class="card" id="focusSetup">
+    <h3>Deep focus session</h3>
+    <div class="field">
+      <label>What are you focusing on, right now?</label>
+      <input type="text" id="focusGoal" placeholder="e.g. Finish chapter 3 draft">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>AI check-in every</label>
+        <select id="focusInterval">
+          <option value="0">Off (timer only)</option>
+          <option value="10">10 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="25">25 min</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Log time as</label>
+        <select id="focusCat"></select>
+      </div>
+    </div>
+    <button class="btn primary" style="width:100%" onclick="startFocus()">Start focus session</button>
+    <div class="warn-text">Turn on your phone/PC's Focus / Do Not Disturb mode before you start — see below. A browser can't do that part for you.</div>
+  </div>
+
+  <div class="card" id="focusActive" style="display:none;">
+    <div style="text-align:center;">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">FOCUSING ON</div>
+      <div style="font-size:17px; font-weight:600; margin-bottom:14px;" id="focusGoalLabel"></div>
+      <div class="num" style="font-size:40px; font-weight:700;" id="focusTimer">00:00:00</div>
+      <div style="display:flex; justify-content:center; gap:18px; margin:14px 0; font-size:12.5px; color:var(--muted);">
+        <span id="focusAwayCount">0 tab-switches</span>
+        <span id="focusAwayTime">0m away</span>
+      </div>
+      <button class="btn danger" onclick="endFocus()">End session</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Import past screentime</h3>
+    <div class="field">
+      <label>Paste lines like "Instagram 45m" or "YouTube 1h 20m" — from your phone's Screen Time / Digital Wellbeing report</label>
+      <textarea id="importText" rows="4" style="width:100%; background:var(--surface2); border:1px solid var(--line); border-radius:9px; color:var(--text); padding:9px; font-family:inherit; font-size:13px;"></textarea>
+    </div>
+    <button class="btn" style="width:100%" onclick="doImport()">Import as today's entries</button>
+  </div>
+
+  <div class="card">
+    <h3>Block calls & notifications (one-time setup)</h3>
+    <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+      <b>Phone:</b> turn on Focus Mode (iPhone) or Focus / Digital Wellbeing (Android) — it silences calls, texts, and app notifications for the time you pick.<br><br>
+      <b>PC:</b> turn on Focus Assist (Windows) or Do Not Disturb (Mac).<br><br>
+      No app — including this one — can flip that switch for you from a browser. It needs a system permission only you can grant, once.
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="checkinModal">
+  <div class="modal">
+    <h3>Quick check-in</h3>
+    <div style="font-size:13px; color:var(--muted); margin-bottom:14px;">Goal: <span id="checkinGoal"></span></div>
+    <div id="checkinOptions" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div id="checkinCustomWrap" style="display:none; margin-top:10px;">
+      <div class="field">
+        <label>What are you doing right now?</label>
+        <input type="text" id="checkinAnswer" placeholder="Type one line...">
+      </div>
+      <button class="btn primary" style="width:100%" onclick="submitCheckin(document.getElementById('checkinAnswer').value.trim())">Ask AI</button>
+    </div>
+    <div id="checkinResult" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div class="modal-bg" id="logModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeLogModal()">×</button>
+    <h3>Log time manually</h3>
+    <div class="field">
+      <label>Category</label>
+      <select id="logCat"></select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Minutes spent</label>
+        <input type="number" id="logMinutes" min="1" value="30">
+      </div>
+      <div class="field">
+        <label>When</label>
+        <select id="logWhen">
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn primary" style="width:100%" onclick="submitLog()">Add entry</button>
+    <div class="warn-text">Tip: copy totals straight from your phone's Screen Time / Digital Wellbeing report.</div>
+  </div>
+</div>
+
+<script>
+// ---------- storage ----------
+const DB_KEY = 'ledger_v1';
+const COLORS = ['#5FA8A0','#D98E4A','#C96B5A','#7C8FE8','#C9A15F','#8AC98A','#B07CE8','#5FBFD9'];
+let db = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(DB_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {
+    categories: [
+      {id:'work', name:'Work / Study', type:'productive', color:'#5FA8A0'},
+      {id:'exercise', name:'Exercise', type:'productive', color:'#8AC98A'},
+      {id:'social', name:'Social Media', type:'distraction', color:'#D98E4A'},
+      {id:'video', name:'Video / Streaming', type:'distraction', color:'#C96B5A'},
+      {id:'chores', name:'Chores / Life admin', type:'neutral', color:'#7C8FE8'}
+    ],
+    entries: [], // {id, catId, start, end, minutes, day}
+    goals: [], // {catId, type:'max'|'min', minutes}
+    running: null // {catId, start}
+  };
+}
+function save(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+function todayStr(offsetDays=0){
+  const d = new Date(); d.setDate(d.getDate()+offsetDays);
+  return d.toISOString().slice(0,10);
+}
+function fmtHM(min){
+  min = Math.round(min);
+  const h = Math.floor(min/60), m = min%60;
+  return h>0 ? `${h}h ${m}m` : `${m}m`;
+}
+function catById(id){ return db.categories.find(c=>c.id===id); }
+
+// ---------- view switching ----------
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  if(v==='goals') renderGoals();
+  if(v==='history') renderHistory();
+  if(v==='categories') renderCategoryManage();
+  if(v==='focus') fillFocusCat();
+}
+
+// ---------- timer ----------
+let tickHandle = null;
+function startTimer(catId){
+  if(db.running) return;
+  db.running = {catId, start: Date.now()};
+  save(); renderRunning(); renderQuickCats();
+  tickHandle = setInterval(renderRunning, 1000);
+}
+function stopTimer(){
+  if(!db.running) return;
+  const mins = (Date.now() - db.running.start)/60000;
+  if(mins >= 0.15){
+    db.entries.push({id:crypto.randomUUID(), catId:db.running.catId, minutes: mins, day: todayStr()});
+  }
+  db.running = null;
+  clearInterval(tickHandle);
+  save(); renderAll();
+}
+function renderRunning(){
+  const card = document.getElementById('runningCard');
+  if(!db.running){ card.style.display='none'; return; }
+  card.style.display='block';
+  const cat = catById(db.running.catId);
+  document.getElementById('runningCat').textContent = cat ? cat.name : '—';
+  const secs = Math.floor((Date.now()-db.running.start)/1000);
+  const h = String(Math.floor(secs/3600)).padStart(2,'0');
+  const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  document.getElementById('runningTime').textContent = `${h}:${m}:${s}`;
+}
+
+// ---------- quick start chips ----------
+function renderQuickCats(){
+  const wrap = document.getElementById('quickCats');
+  wrap.innerHTML = '';
+  db.categories.forEach(c=>{
+    const running = db.running && db.running.catId===c.id;
+    const b = document.createElement('button');
+    b.className = 'btn' + (running?'':'');
+    b.style.cssText = `margin:0 6px 8px 0; border-color:${c.color}55;`;
+    b.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.name}`;
+    b.disabled = !!db.running;
+    if(running){ b.style.opacity='0.5'; }
+    b.onclick = ()=>startTimer(c.id);
+    wrap.appendChild(b);
+  });
+  document.getElementById('startCard').style.display = db.running ? 'none' : 'block';
+}
+
+// ---------- today breakdown ----------
+function entriesForDay(day){ return db.entries.filter(e=>e.day===day); }
+
+function renderToday(){
+  const label = new Date();
+  document.getElementById('todayLabel').textContent = label.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+
+  const today = todayStr();
+  const list = entriesForDay(today);
+  const total = list.reduce((s,e)=>s+e.minutes,0);
+  const productive = list.filter(e=>catById(e.catId)?.type==='productive').reduce((s,e)=>s+e.minutes,0);
+  const waste = list.filter(e=>catById(e.catId)?.type==='distraction').reduce((s,e)=>s+e.minutes,0);
+
+  document.getElementById('totalToday').textContent = fmtHM(total);
+  document.getElementById('productiveToday').textContent = fmtHM(productive);
+  document.getElementById('wasteToday').textContent = fmtHM(waste);
+  document.getElementById('sessionsToday').textContent = list.length;
+
+  const byCat = {};
+  list.forEach(e=>{ byCat[e.catId] = (byCat[e.catId]||0) + e.minutes; });
+  const rows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const wrap = document.getElementById('catBreakdown');
+  if(rows.length===0){
+    wrap.innerHTML = '<div class="empty">Nothing logged yet today. Start a timer above, or log manually.</div>';
+  }else{
+    wrap.innerHTML = rows.map(([id,mins])=>{
+      const c = catById(id) || {name:'Deleted', color:'#666'};
+      return `<div class="cat-row"><span class="dot" style="background:${c.color}"></span><span class="name">${c.name}</span><span class="time">${fmtHM(mins)}</span></div>`;
+    }).join('');
+  }
+  renderQuickCats();
+}
+
+// ---------- goals ----------
+function fillCatSelects(){
+  const opts = db.categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('goalCat').innerHTML = opts;
+  document.getElementById('logCat').innerHTML = opts;
+}
+function addGoal(){
+  const catId = document.getElementById('goalCat').value;
+  const type = document.getElementById('goalType').value;
+  const minutes = parseInt(document.getElementById('goalMinutes').value) || 30;
+  db.goals = db.goals.filter(g=>g.catId!==catId); // one goal per cat
+  db.goals.push({catId, type, minutes});
+  save(); renderGoals();
+}
+function removeGoal(catId){
+  db.goals = db.goals.filter(g=>g.catId!==catId);
+  save(); renderGoals();
+}
+function renderGoals(){
+  const today = todayStr();
+  const list = entriesForDay(today);
+  const byCat = {};
+  list.forEach(e=>{ byCat[e.catId] = (byCat[e.catId]||0) + e.minutes; });
+
+  const wrap = document.getElementById('goalsList');
+  document.getElementById('goalsEmpty').style.display = db.goals.length ? 'none' : 'block';
+  wrap.innerHTML = db.goals.map(g=>{
+    const c = catById(g.catId); if(!c) return '';
+    const have = byCat[g.catId] || 0;
+    const pct = Math.min(100, (have/g.minutes)*100);
+    const over = g.type==='max' && have > g.minutes;
+    const met = g.type==='min' && have >= g.minutes;
+    const barColor = over ? 'var(--danger)' : (met ? 'var(--accent)' : c.color);
+    const statusText = g.type==='max'
+      ? (over ? `${fmtHM(have-g.minutes)} over limit` : `${fmtHM(g.minutes-have)} left today`)
+      : (met ? 'Target met' : `${fmtHM(g.minutes-have)} to go`);
+    return `<div class="goal-row">
+      <div class="goal-top">
+        <span class="g-name"><span class="dot" style="background:${c.color}"></span>${c.name} · ${g.type==='max'?'limit':'target'} ${g.minutes}m</span>
+        <span class="g-amt" onclick="removeGoal('${g.catId}')" style="cursor:pointer">✕</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${barColor}"></div></div>
+      <div style="font-size:11.5px; color:var(--muted); margin-top:5px;">${fmtHM(have)} logged today · ${statusText}</div>
+    </div>`;
+  }).join('');
+  fillCatSelects();
+}
+
+// ---------- history ----------
+function renderHistory(){
+  const wrap = document.getElementById('historyList');
+  const days = [];
+  for(let i=0;i<14;i++) days.push(todayStr(-i));
+  const rows = days.map(day=>{
+    const list = entriesForDay(day);
+    const total = list.reduce((s,e)=>s+e.minutes,0);
+    if(total===0 && day!==todayStr()) return null;
+    const byCat = {};
+    list.forEach(e=>{ byCat[e.catId] = (byCat[e.catId]||0) + e.minutes; });
+    const segs = Object.entries(byCat).map(([id,m])=>{
+      const c = catById(id); const w = total? (m/total*100):0;
+      return `<div style="width:${w}%; background:${c?c.color:'#666'}"></div>`;
+    }).join('');
+    const d = new Date(day+'T12:00:00');
+    const lbl = day===todayStr() ? 'Today' : d.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+    return `<div class="hist-row"><span class="hist-day">${lbl}</span><span style="display:flex; align-items:center; gap:10px;"><span style="color:var(--muted)">${fmtHM(total)}</span><span class="hist-bars">${segs||''}</span></span></div>`;
+  }).filter(Boolean);
+  wrap.innerHTML = rows.length ? rows.join('') : '<div class="empty">History will appear as you track days.</div>';
+}
+
+// ---------- categories ----------
+let newCatType = 'productive';
+let newCatColor = COLORS[0];
+function setNewCatType(t){
+  newCatType = t;
+  ['Productive','Distraction','Neutral'].forEach(x=>{
+    document.getElementById('chip'+x).classList.toggle('on', x.toLowerCase()===t);
+  });
+}
+function buildColorPicker(){
+  const wrap = document.getElementById('colorPicker');
+  wrap.innerHTML = COLORS.map(c=>`<span onclick="pickColor('${c}')" data-c="${c}" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:${c};margin:2px 6px 2px 0;cursor:pointer;border:2px solid ${c===newCatColor?'#fff':'transparent'}"></span>`).join('');
+}
+function pickColor(c){ newCatColor = c; buildColorPicker(); }
+function addCategory(){
+  const name = document.getElementById('newCatName').value.trim();
+  if(!name) return;
+  db.categories.push({id:crypto.randomUUID(), name, type:newCatType, color:newCatColor});
+  document.getElementById('newCatName').value='';
+  save(); renderCategoryManage(); renderToday();
+}
+function deleteCategory(id){
+  if(!confirm('Delete this category? Past entries stay in history but lose their label.')) return;
+  db.categories = db.categories.filter(c=>c.id!==id);
+  db.goals = db.goals.filter(g=>g.catId!==id);
+  save(); renderCategoryManage(); renderAll();
+}
+function renderCategoryManage(){
+  const wrap = document.getElementById('catManageList');
+  wrap.innerHTML = db.categories.map(c=>`
+    <div class="cat-row">
+      <span class="dot" style="background:${c.color}"></span>
+      <span class="name">${c.name} <span style="color:var(--muted); font-weight:400; font-size:12px;">· ${c.type}</span></span>
+      <span onclick="deleteCategory('${c.id}')" style="color:var(--muted); cursor:pointer; padding:4px;">✕</span>
+    </div>`).join('');
+  buildColorPicker();
+}
+
+// ---------- manual log modal ----------
+function openLogModal(){ document.getElementById('logModal').classList.add('show'); }
+function closeLogModal(){ document.getElementById('logModal').classList.remove('show'); }
+function submitLog(){
+  const catId = document.getElementById('logCat').value;
+  const minutes = parseInt(document.getElementById('logMinutes').value) || 0;
+  const when = document.getElementById('logWhen').value;
+  if(minutes<=0) return;
+  db.entries.push({id:crypto.randomUUID(), catId, minutes, day: when==='today'?todayStr():todayStr(-1)});
+  save(); closeLogModal(); renderAll();
+}
+
+// ---------- focus session ----------
+let focusTimerHandle=null, focusState=null, checkinTimerHandle=null;
+function fillFocusCat(){ document.getElementById('focusCat').innerHTML = db.categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); }
+function startFocus(){
+  const goal = document.getElementById('focusGoal').value.trim();
+  if(!goal){ alert('Type what you are focusing on first.'); return; }
+  const interval = parseInt(document.getElementById('focusInterval').value);
+  const catId = document.getElementById('focusCat').value;
+  focusState = {goal, catId, start: Date.now(), awayCount:0, awayMs:0, blurStart:null};
+  document.getElementById('focusSetup').style.display='none';
+  document.getElementById('focusActive').style.display='block';
+  document.getElementById('focusGoalLabel').textContent = goal;
+  focusTimerHandle = setInterval(tickFocus, 1000);
+  window.addEventListener('blur', onFocusBlur);
+  window.addEventListener('focus', onFocusFocus);
+  document.addEventListener('visibilitychange', onVisChange);
+  if(interval>0){ checkinTimerHandle = setInterval(triggerCheckin, interval*60000); }
+}
+function onFocusBlur(){ if(focusState && !focusState.blurStart) focusState.blurStart = Date.now(); }
+function onFocusFocus(){
+  if(focusState && focusState.blurStart){
+    const away = Date.now()-focusState.blurStart;
+    if(away > 2000){ focusState.awayCount++; focusState.awayMs += away; }
+    focusState.blurStart = null;
+  }
+}
+function onVisChange(){ if(document.hidden) onFocusBlur(); else onFocusFocus(); }
+function tickFocus(){
+  if(!focusState) return;
+  const secs = Math.floor((Date.now()-focusState.start)/1000);
+  const h=String(Math.floor(secs/3600)).padStart(2,'0'), m=String(Math.floor(secs%3600/60)).padStart(2,'0'), s=String(secs%60).padStart(2,'0');
+  document.getElementById('focusTimer').textContent = `${h}:${m}:${s}`;
+  document.getElementById('focusAwayCount').textContent = `${focusState.awayCount} tab-switches`;
+  document.getElementById('focusAwayTime').textContent = `${fmtHM(focusState.awayMs/60000)} away`;
+}
+function endFocus(){
+  if(!focusState) return;
+  const mins = (Date.now()-focusState.start)/60000;
+  if(mins>=0.15){
+    db.entries.push({id:crypto.randomUUID(), catId:focusState.catId, minutes:mins, day:todayStr()});
+    save();
+  }
+  clearInterval(focusTimerHandle); clearInterval(checkinTimerHandle);
+  window.removeEventListener('blur', onFocusBlur);
+  window.removeEventListener('focus', onFocusFocus);
+  document.removeEventListener('visibilitychange', onVisChange);
+  const summary = `Session done: ${fmtHM(mins)} focused, ${focusState.awayCount} tab-switches, ${fmtHM(focusState.awayMs/60000)} away.`;
+  focusState = null;
+  document.getElementById('focusSetup').style.display='block';
+  document.getElementById('focusActive').style.display='none';
+  document.getElementById('focusGoal').value='';
+  renderAll();
+  alert(summary);
+}
+const CHECKIN_OPTIONS = [
+  {label:"Still working on it ✅", answer:null, fast:'on'},
+  {label:"Doing something goal-related, but different", answer:"working on something related to the goal but not exactly it"},
+  {label:"On a short break ☕", answer:"taking a short intentional break"},
+  {label:"Got pulled into something else 📱", answer:null, fast:'off'},
+  {label:"Type my own answer…", custom:true}
+];
+function triggerCheckin(){
+  if(!focusState) return;
+  document.getElementById('checkinGoal').textContent = focusState.goal;
+  document.getElementById('checkinAnswer').value='';
+  document.getElementById('checkinCustomWrap').style.display='none';
+  document.getElementById('checkinResult').style.display='none';
+  const wrap = document.getElementById('checkinOptions');
+  wrap.innerHTML = '';
+  CHECKIN_OPTIONS.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.style.width = '100%';
+    b.style.textAlign = 'left';
+    b.textContent = opt.label;
+    b.onclick = ()=>{
+      if(opt.custom){ document.getElementById('checkinCustomWrap').style.display='block'; return; }
+      submitCheckin(opt.answer, opt.fast);
+    };
+    wrap.appendChild(b);
+  });
+  document.getElementById('checkinModal').classList.add('show');
+}
+async function submitCheckin(answer, fast){
+  if(!focusState) return;
+  if(fast){
+    const off = fast==='off';
+    const resultBox = document.getElementById('checkinResult');
+    resultBox.style.display='block';
+    resultBox.innerHTML = `<div style="padding:10px; border-radius:9px; background:${off?'rgba(201,107,90,.15)':'rgba(95,168,160,.15)'}; color:${off?'var(--danger)':'var(--accent)'}; font-size:13.5px;">${off?'DISTRACTED — logged, get back to it.':'ON TRACK — keep going.'}</div>`;
+    if(off) focusState.awayCount++;
+    return;
+  }
+  if(!answer) return;
+  const resultBox = document.getElementById('checkinResult');
+  resultBox.style.display='block';
+  resultBox.innerHTML = '<div style="color:var(--muted); font-size:13px;">Checking…</div>';
+  try{
+    if(typeof claude === 'undefined' || !claude.use){ resultBox.innerHTML = '<div style="color:var(--warn); font-size:13px;">AI check-in only works on claude.ai — on this hosting it just logs your tap. Timer and tab-switch tracking still work.</div>'; return; }
+    const sample = await claude.use('sample');
+    if(!sample){ resultBox.innerHTML = '<div style="color:var(--warn); font-size:13px;">AI check-in isn\\'t available in this view — the timer and tab-switch tracking still work.</div>'; return; }
+    const res = await sample(`Goal: "${focusState.goal}". The person just told me what they are doing right now: "${answer}". In one short plain sentence, tell them if this is on-track or a distraction, and why. Start the sentence with exactly "ON TRACK" or "DISTRACTED".`, {modelTier:'quick'});
+    const text = res.text || '';
+    const off = /^distracted/i.test(text.trim());
+    resultBox.innerHTML = `<div style="padding:10px; border-radius:9px; background:${off?'rgba(201,107,90,.15)':'rgba(95,168,160,.15)'}; color:${off?'var(--danger)':'var(--accent)'}; font-size:13.5px;">${text}</div>`;
+    if(off) focusState.awayCount++;
+  }catch(e){
+    resultBox.innerHTML = '<div style="color:var(--warn); font-size:13px;">Could not reach the AI check-in just now.</div>';
+  }
+}
+function closeCheckin(){ document.getElementById('checkinModal').classList.remove('show'); }
+
+// ---------- import ----------
+function doImport(){
+  const raw = document.getElementById('importText').value;
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  let count=0;
+  lines.forEach(line=>{
+    const mHM = line.match(/^(.+?)\s+(\d+)\s*h\s*(\d+)?\s*m?$/i);
+    const mH = line.match(/^(.+?)\s+(\d+)\s*h$/i);
+    const mM = line.match(/^(.+?)\s+(\d+)\s*m$/i);
+    let name, minutes;
+    if(mHM){ name=mHM[1].trim(); minutes = parseInt(mHM[2])*60 + (parseInt(mHM[3])||0); }
+    else if(mH){ name=mH[1].trim(); minutes = parseInt(mH[2])*60; }
+    else if(mM){ name=mM[1].trim(); minutes = parseInt(mM[2]); }
+    else return;
+    let cat = db.categories.find(c=>c.name.toLowerCase()===name.toLowerCase());
+    if(!cat){ cat = {id:crypto.randomUUID(), name, type:'distraction', color: COLORS[db.categories.length % COLORS.length]}; db.categories.push(cat); }
+    db.entries.push({id:crypto.randomUUID(), catId:cat.id, minutes, day:todayStr()});
+    count++;
+  });
+  save(); renderAll(); renderCategoryManage();
+  document.getElementById('importText').value='';
+  alert(count ? `Imported ${count} entries.` : 'No lines matched. Try "Name 45m" or "Name 1h 20m".');
+}
+
+// ---------- init ----------
+function renderAll(){
+  renderToday();
+  renderRunning();
+  if(document.getElementById('view-goals').classList.contains('active')) renderGoals();
+  if(document.getElementById('view-history').classList.contains('active')) renderHistory();
+  if(document.getElementById('view-categories').classList.contains('active')) renderCategoryManage();
+}
+fillCatSelects();
+fillFocusCat();
+renderAll();
+if(db.running){ tickHandle = setInterval(renderRunning, 1000); }
+</script>
+</body>
+</html>
